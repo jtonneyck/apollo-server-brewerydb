@@ -1,29 +1,42 @@
 const { RESTDataSource } = require('apollo-datasource-rest');
-
-class BrewersAPI extends RESTDataSource {
+const _ = require("lodash");
+class BrewersApi extends RESTDataSource {
   constructor() {
     super();
-    this.baseURL = `${process.env.baseURL}`;
+    this.baseURL = `${process.env.base_url}`;
+    this.searchBeers = this.searchBeers.bind(this);
+    this.beerReducer = this.beerReducer.bind(this);
+    this.breweriesReducer = this.breweriesReducer.bind(this);
+    this.locationReducer = this.locationReducer.bind(this);
   }
 
-  async searchBeers({searchTerm}) {
-    const beers = await this.get("/beers", {
-        params: {
-            name: searchTerm,
-            withBreweries: "Y"
+  async searchBeers({searchTerm, page = 1}) {
+    let beers;
+    try{
+        const {data} = await this.get(`/beers?name=${searchTerm}&withBreweries=Y&p=${page}`);
+        beers = data;
+    } catch(err){
+        console.log(err);
+        return [];
+    }
+    return {
+            beers: beers? beers.map(this.beerReducer): [],
+            filters: beers? this.filterReducer(beers): [],
+            hasMore: beers.currentPage < beers.numberOfPages
         }
-    })
   }
 
-  beerReducer({id, name, abv, styleId, createDate, breweries}) {
+  beerReducer({id, name, abv, styleId, createDate, breweries, ...beer}) {
     let mappedBeer = {
         id,
         name,
         abv,
         styleId,
         createDate,
-        breweries: breweries.map(this.breweriesReducer)
+        breweries: breweries.map(this.breweriesReducer),
+        type: this.typeReducer(beer)
     }
+    return mappedBeer
   }
 
   breweriesReducer({id,name,description,locations,...brewery}){
@@ -40,19 +53,53 @@ class BrewersAPI extends RESTDataSource {
         });
   }
 
-  locationReducer({region, countryIsoCode, longitude, latitude}){
+  locationReducer({region, country, longitude, latitude}){
       return ({
             region,
             coordinates:  {
                 longitude,
                 latitude            
             },
-            countryIsoCode
+            country: {
+                isoCode: country.isoCode,
+                name: country.name
+            }
         });
   }
-  
+  typeReducer({isRetired, isOrganic, style}){
+      return ({
+        isRetired: isRetired === "Y",
+        isOrganic: isOrganic === "Y",
+        category: style && style.category && style.category.name
+      })
+  }
+
+  filterReducer(beers){
+
+      let locations = _
+        .chain(beers)
+        .flatMap((beer)=>beer.breweries)
+        .flatMap((brewery)=> [...brewery.locations])
+        .uniqWith(_.isEqual)
+        .value()
+
+        return {
+            regions: _.chain(locations).uniqBy('region').map((location)=> location.region).value(),
+            coordinates: _.chain(locations).map(({latitude, longitude})=> ({latitude, longitude})).value(),
+            countries: _
+                        .chain(locations)
+                        .map((location)=> ({
+                                isoCode: location.country.isoCode, 
+                                name: location.country.name
+                        }))
+                        .uniqBy(_.isEqual)
+                        .value()
+        }
+
+  }
   willSendRequest(request) {
     request.params.set('key', process.env.API_KEY);
   }
-  
 }
+
+module.exports.BrewersApi = BrewersApi;
