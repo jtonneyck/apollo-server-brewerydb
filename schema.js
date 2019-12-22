@@ -3,14 +3,15 @@ const {gql} = require("apollo-server");
 module.exports.typeDefs = gql`
 
     type Query {
-        searchBeer(searchTerm: String, page: String): SearchResult!
+        searchBeer(searchTerm: String, page: Int): SearchResult!
     }
     type SearchResult {
         beers: [Beer]!
         filters: Filters
         hasMore: Boolean!
+        page: Int
     }
-    
+
     type Beer {
         id: String!
         name: String!
@@ -62,4 +63,5 @@ module.exports.typeDefs = gql`
         countries: [Country]!
         types: [BeerType]!
     }
+
 `;

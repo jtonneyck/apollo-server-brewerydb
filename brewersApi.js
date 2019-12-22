@@ -11,18 +11,14 @@ class BrewersApi extends RESTDataSource {
   }
 
   async searchBeers({searchTerm, page = 1}) {
-    let beers;
-    try{
-        const {data} = await this.get(`/beers?name=${searchTerm}&withBreweries=Y&p=${page}`);
-        beers = data;
-    } catch(err){
-        console.log(err);
-        return [];
-    }
+
+    const {data: beers, currentPage, numberOfPages} = await this.get(`/beers?name=${searchTerm}&withBreweries=Y&p=${page}`);
+  
     return {
             beers: beers? beers.map(this.beerReducer): [],
             filters: beers? this.filterReducer(beers): [],
-            hasMore: beers.currentPage < beers.numberOfPages
+            hasMore: currentPage < numberOfPages,
+            page: currentPage
         }
   }
 
