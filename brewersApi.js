@@ -13,7 +13,6 @@ class BrewersApi extends RESTDataSource {
   async searchBeers({searchTerm, page = 1}) {
 
     const {data: beers, currentPage, numberOfPages} = await this.get(`/beers?name=${searchTerm}&withBreweries=Y&p=${page}`);
-  
     return {
             beers: beers? beers.map(this.beerReducer): [],
             filters: beers? this.filterReducer(beers): [],
@@ -22,13 +21,18 @@ class BrewersApi extends RESTDataSource {
         }
   }
 
-  beerReducer({id, name, abv, styleId, createDate, breweries, ...beer}) {
-    let mappedBeer = {
+  beerReducer({id, name, abv, styleId, createDate, breweries, labels, ...beer}) {
+      let mappedBeer = {
         id,
         name,
         abv,
         styleId,
         createDate,
+        images: {
+            icon: labels && labels.icon || "",
+            medium: labels? labels.medium : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiibTvFF1fNdFWy6t4Mb1KSBgoS3KFs9mUS8_aFBMO5m-Zgfjh&s",
+            large: labels && labels.large || ""
+        },
         breweries: breweries.map(this.breweriesReducer),
         type: this.typeReducer(beer)
     }
@@ -66,7 +70,7 @@ class BrewersApi extends RESTDataSource {
       return ({
         isRetired: isRetired === "Y",
         isOrganic: isOrganic === "Y",
-        category: style && style.category && style.category.name
+        category: (style && style.category && style.category.name) || "Other"
       })
   }
 
@@ -91,11 +95,12 @@ class BrewersApi extends RESTDataSource {
                         .uniqBy(_.isEqual)
                         .value()
         }
-
   }
+
   willSendRequest(request) {
     request.params.set('key', process.env.API_KEY);
   }
+
 }
 
 module.exports.BrewersApi = BrewersApi;

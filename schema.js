@@ -2,7 +2,7 @@ const {gql} = require("apollo-server");
 
 module.exports.typeDefs = gql`
 
-    type Query {
+    type Query @cacheControl(maxAge: 300) { """5 min"""
         searchBeer(searchTerm: String, page: Int): SearchResult!
     }
     type SearchResult {
@@ -19,7 +19,8 @@ module.exports.typeDefs = gql`
         styleId: Int!
         createDate: String!
         breweries: [Brewery]!
-        type: BeerType
+        type: BeerType,
+        images: Label
     }
 
     type Location {
