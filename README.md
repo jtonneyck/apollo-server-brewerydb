@@ -8,3 +8,14 @@ You can find the CLIENT code <a href="https://github.com/Piepongwong/pixel.widge
 Because of time constraints I didn't get to finish the filter functionalities. I would also have liked to add nested grouping. For example, I would have liked to group by region first and than by type or the other way around. 
 
 The app is also not properly tested nor is it deployed, let alone in a CI/CD fashion. I would have liked to split the view and server up in separate Docker containers and orchestrate them using Kubernetes. I'm going to put this on my wishlist for santa. ;)
+
+## Instructions
+
+add a .env file with the following settings
+```
+    API_KEY=yourBrewerydb.com/ApiKey
+    base_url=https://sandbox-api.brewerydb.com/v2/
+```
+
+`npm i`
+`npm start`
